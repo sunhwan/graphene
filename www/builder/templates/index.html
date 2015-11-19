@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block javascript %}
+
+$(document).ready(function() {
+  // popover initialize
+  $('.badge').popover('hide');
+
+  $('#form').submit(function() {
+    is_valid = true;
+
+    if ($('input[name=nrings]').val() > 1000) {
+      myalert('Too big!');
+      is_valid = false;
+    }
+
+    if ($('input[name=defect]').val() > 50) {
+      myalert('Too big!');
+      is_valid = false;
+    }
+
+    if ($('input[name=defect]').val() < 0) {
+      myalert('Too small!');
+      is_valid = false;
+    }
+
+    return is_valid;
+  });
+});
+
+function myalert(msg) {
+  $('#message').show();
+  $('span.alert-error').html(msg);
+}
+{% endblock %}
+
+{% block content %}
+<form class="form-horizontal" enctype="multipart/form-data" method="POST" id='form' action="{{ action|default(url_for('build')) }}">
+
+<div class="alert alert-info">
+Please choose size and the level of defects in a graphene sheet.
+<ul>
+  <li>Graphene sheet with six membered carbon rings will be built assuming sp2 hybridization.</li>
+  <li>Depending on the input parameter, defects, either seven membered carbon ring or five membered carbon ring, will be introduced randomly.</li>
+  <li>Defect will not be placed right next to one another.</li>
+</ul>
+
+For more information, please see <a href="{{ url_for('tutorial') }}">Tutorial</a> page.
+</div>
+
+<div class="control-group">
+  <label class="control-label">Parameters</label>
+  <div class="controls">
+
+    <table class="table-condensed">
+      <tr>
+        <td>Number of carbon rings</td>
+        <td>
+          <input type="text" name='nrings' value='100' class="input-mini" style="height: 14px; line-height: 14px;" required>
+          <!--<span class='badge' data-toggle="popover" data-placement="right" data-content="Force constant for the ANM around end structure 1">?</a></span>-->
+        </td>
+      </tr>
+      <tr>
+        <td>% defect</td>
+        <td>
+          <input type="text" name='defect' value='10' class="input-mini" style="height: 14px; line-height: 14px;" required>
+          <!--<span class='badge' data-toggle="popover" data-placement="right" data-content="Cut-off distance for the ANM around end structure 1">?</a></span>-->
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class="control-group" id='message'{% if not error or error.code == 200 %} style="display: none"{% endif %}>
+  <div class="controls">
+    <span class="help-inline alert alert-error">{% if error and error.code != 200 %}{{ error.message }}{% endif %}</span>
+  </div>
+</div>
+
+<div class="control-group">
+  <div class="controls">
+    <button class="btn" type="submit">BUILD!</button>
+  </div>
+</div>
+
+</form>
+
+{% endblock %}

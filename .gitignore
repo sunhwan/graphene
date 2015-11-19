@@ -1,3 +1,12 @@
 .ipynb_checkpoints
 www/builder/conf.py
 .conf.py.swp
+www/data
+src/test.out
+src/graphene.pdb
+conf.pyc
+.DS_Store
+build.pyc
+junk.pdb
+src/graphene.prm
+src/graphene.rtf

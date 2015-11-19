@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row-fluid marketing text-center">
+<div class='hero-unit'>
+  <h3>Graphene is built.</h3>
+
+  <p>
+    Click <a href="{{ url_for('download', uuid=uuid) }}">here</a> to download PDB.
+  </p>
+  <p> JOBID: {{ uuid }} </p>
+</div>
+</div>
+
+{% endblock %}

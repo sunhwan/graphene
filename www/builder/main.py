@@ -13,9 +13,10 @@ import subprocess as sp
 ALLOWED_EXTENSIONS = set(['pdb'])
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = conf.UPLOAD_FOLDER
 app.config['JOB_FOLDER'] = conf.JOB_FOLDER
 
+def get_job_folder(uuid):
+    return os.path.join(conf.JOB_FOLDER, uuid)
 
 # main
 
@@ -29,14 +30,15 @@ def index():
 
 @app.route('/tutorial')
 def tutorial():
-    return render_template('tutorial.html')
+    return render_template('404.html')
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    return render_template('404.html')
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
+    return render_template('404.html')
     mail_sent = False
     if request.method == 'POST':
         email = request.form['email']
@@ -57,33 +59,56 @@ def download(uuid, filename):
     jobdir = get_job_folder(uuid)
     if not os.path.exists(jobdir): abort(404)
 
-    if filename:
-        filename = os.path.join(jobdir, os.path.basename(filename))
-        if not os.path.exists(filename): abort(404)
-        fp = open(filename)
-        if filename.endswith('gif'):
-            return send_file(fp, as_attachment=False, attachment_filename=os.path.basename(filename))
-        return send_file(fp, as_attachment=True, attachment_filename=os.path.basename(filename))
-
-    else:
-        import tarfile
-        import StringIO, glob
-        fp = StringIO.StringIO()
-        tar = tarfile.open(fileobj=fp, mode='w:gz')
-        excludes = ['taskmanager.py', 'err', 'out', 'run.pbs']
-        for f in glob.glob('%s/*' % jobdir):
-            if os.path.basename(f) in excludes: continue
-            tar.add(f, arcname='anmpathway/%s' % os.path.basename(f))
-        tar.close()
-        fp.seek(0)
-        return send_file(fp, mimetype='application/x-gzip', as_attachment=True, attachment_filename='anmpathway.tar.gz')
+    filename = os.path.join(jobdir, 'graphene.pdb')
+    if not os.path.exists(filename): abort(404)
+    fp = open(filename)
+    return send_file(fp, as_attachment=True, attachment_filename=os.path.basename(filename))
 
 @app.route('/success/<uuid>')
 def success(uuid):
     return render_template('success.html', uuid=uuid)
 
-@app.route('/', methods=['GET', 'POST'])
-def pathfinder():
+@app.route('/build', methods=['get', 'post'])
+def build():
+    from build import *
+    import networkx as nx
+
+    jobid = str(uuid.uuid4())
+    os.mkdir(get_job_folder(jobid))
+
+    nrings = int(request.form['nrings'])
+    defect = float(request.form['defect']) / 100
+
+    g = nx.Graph()
+    g.defect_level = defect
+    add_unit(g)
+    closed_node = []
+    for i in range(nrings):
+        node = find_neighbor(g)
+        nodetype = g.node[node]['vertices']
+        for j in range(nodetype):
+            add_unit_neighbor(g, node)
+
+        for n in g.nodes():
+            if n not in closed_node and g.node[n]['vertices'] == g.degree(n):
+                check_closure(g, n)
+                closed_node.append(n)
+
+    h = atom_graph(g)
+    pos=nx.graphviz_layout(h, prog='neato')
+    pdbname = '%s/junk.pdb' % get_job_folder(jobid)
+    rtfname = '%s/graphene.rtf' % get_job_folder(jobid)
+    atom_names = build_initial_pdb(g, pos, pdbname)
+    build_topology(h, atom_names, rtfname)
+
+    from shutil import copy
+    copy('static/charmm/graphene.prm', get_job_folder(jobid))
+    copy('static/charmm/mini.inp', get_job_folder(jobid))
+
+    import subprocess as sp
+    p = sp.Popen([conf.CHARMM_BINARY, '-i', 'mini.inp'], cwd=get_job_folder(jobid))
+    p.wait()
+
     return redirect(url_for('success', uuid=jobid))
 
 if __name__ == '__main__':
