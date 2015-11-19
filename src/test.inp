@@ -1,0 +1,49 @@
+* generate graphene sheet
+*
+
+ioformat ext
+read rtf card name graphene.rtf
+read para card name graphene.prm flex
+
+read sequ gp 1
+gene gp first none last none
+
+read coor pdb name junk.pdb resid
+
+coor stat sele all end
+set natom = ?nsel
+
+mini sd nstep 10000
+mini abnr nstep 10000
+write coor pdb name graphene.pdb
+
+stop
+
+energy 
+scalar type set 62 sele .not. ( bynu 1 .or. .bonded. bynu 1 ) end
+define atom sele chem cg2r61 end
+
+label loop
+
+mini sd nstep 5000
+mini abnr nstep 5000
+mini sd nstep 5000
+mini abnr nstep 5000
+mini sd nstep 5000
+mini abnr nstep 5000
+
+scalar type set 61 sele ( ( .bonded. atom ) .and. .not. chem cg2r61 ) .subset. 1 end
+define atom sele chem cg2r61 end
+
+if ?nsel .lt. @natom goto loop
+
+mini sd nstep 1000
+mini abnr nstep 1000
+mini sd nstep 1000
+mini abnr nstep 1000
+
+write coor pdb name graphene.pdb sele chem cg2r61 end
+
+!write psf card name graphene.psf
+
+stop
