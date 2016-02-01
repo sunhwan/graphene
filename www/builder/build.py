@@ -18,7 +18,7 @@ def add_unit_neighbor(g, neighbor, nodetype={'vertices': 6}):
         check_closure(g, neighbor)
         return False
     
-    if random.random() <= g.defect_level and g.node[neighbor]['vertices'] == 6:
+    if random.random() <= g.defect_level and (g.dense_defect or g.node[neighbor]['vertices'] == 6):
         nodetype = {'vertices': 5}
         if random.random() < 0.5: nodetype = {'vertices': 7}
     

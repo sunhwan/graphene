@@ -78,9 +78,11 @@ def build():
 
     nrings = int(request.form['nrings'])
     defect = float(request.form['defect']) / 100
+    dense_defect = bool(request.form['dense_defect'])
 
     g = nx.Graph()
     g.defect_level = defect
+    g.dense_defect = dense_defect
     add_unit(g)
     closed_node = []
     for i in range(nrings):

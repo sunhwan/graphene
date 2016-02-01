@@ -9,7 +9,7 @@ $(document).ready(function() {
   $('#form').submit(function() {
     is_valid = true;
 
-    if ($('input[name=nrings]').val() > 1000) {
+    if ($('input[name=nrings]').val() > 5000) {
       myalert('Too big!');
       is_valid = false;
     }
@@ -64,6 +64,13 @@ For more information, please see <a href="{{ url_for('tutorial') }}">Tutorial</a
         <td>% defect</td>
         <td>
           <input type="text" name='defect' value='10' class="input-mini" style="height: 14px; line-height: 14px;" required>
+          <!--<span class='badge' data-toggle="popover" data-placement="right" data-content="Cut-off distance for the ANM around end structure 1">?</a></span>-->
+        </td>
+      </tr>
+      <tr>
+        <td>allow neighboring defects</td>
+        <td>
+          <input type="checkbox" name='dense_defect' value='10' class="input-mini" style="height: 14px; line-height: 14px;" required>
           <!--<span class='badge' data-toggle="popover" data-placement="right" data-content="Cut-off distance for the ANM around end structure 1">?</a></span>-->
         </td>
       </tr>
