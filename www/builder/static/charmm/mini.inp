@@ -13,6 +13,8 @@ read coor pdb name junk.pdb resid
 coor stat sele all end
 set natom = ?nsel
 
+hbuild sele type h* end
+
 mini sd nstep 10000
 mini abnr nstep 10000
 write coor pdb name graphene.pdb

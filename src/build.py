@@ -118,7 +118,7 @@ def atom_graph(g):
                     g.node[node]['atoms'].add(nr)
                     g.node[each]['atoms'].add(nr)
                     g.node[neighbor]['atoms'].add(nr)
-                    print(node, each, neighbor)
+                    #print(node, each, neighbor)
                     for k in tris:
                         if len(set(k).intersection(set(t))) == 2:
                             h.add_edge(nr, tris[k])
@@ -174,13 +174,14 @@ def build_initial_pdb(h, pos):
             fp.write(line % atomdata)
             count += 1
             theta += 60
+    fp.write('TER\n')
     fp.close()
     return atom_names
 
 def build_topology(h, atom_names):
     v = []
     atom_names = {}
-    count = 1
+    count = {'C': 1, 'H': 1}
     fp = open('graphene.rtf', 'w')
     fp.write("""*  --------------------------------------------------------------------------  *
 *          GRAPHENE                                                            *
@@ -196,12 +197,21 @@ AUTO ANGLES DIHE
 
 RESI GP 0.0
 """)
-    for atom in h.nodes():
+    for atom, data in h.nodes(data=True):
         if h.degree(atom) < 1: continue
-        atom_names[atom] = "C%x" % count
-        count += 1
-        if count % 2 == 0:
+        if data.get('type') == 'H': continue
+        
+        if count['C'] % 2 == 1:
             fp.write("GROUP\n")
+
+        for n in h[atom]:
+            if h.node[n].get('type') != 'H': continue
+            atom_names[n] = "H%x" % count['H']
+            fp.write("ATOM %s HGR61 0.0\n" % atom_names[n])
+            count['H'] += 1
+
+        atom_names[atom] = "C%x" % count['C']
+        count['C'] += 1
         fp.write("ATOM %s CG2R61 0.0\n" % atom_names[atom])
         
     for atom_edge in h.edges():
@@ -212,7 +222,7 @@ if __name__ == '__main__':
     g = nx.Graph()
     add_unit(g)
     closed_node = []
-    for i in range(700):
+    for i in range(70):
         node = find_neighbor(g)
         nodetype = g.node[node]['vertices']
         for j in range(nodetype):
@@ -224,7 +234,19 @@ if __name__ == '__main__':
                 closed_node.append(n)
 
     h = atom_graph(g)
-    pos=nx.graphviz_layout(h, prog='neato')
+
+    # cap hydrogen
+    atoms = h.nodes()
+    count = len(h.nodes())
+    for n in atoms:
+        if h.degree(n) != 3:
+            nn = 3 - h.degree(n)
+            for _ in range(nn):
+                h.add_node(count, {'type': 'H'})
+                h.add_edge(n, count)
+                count += 1
+
+    pos=nx.nx_agraph.graphviz_layout(h, prog='neato')
     atom_names = build_initial_pdb(h, pos)
     build_topology(h, atom_names)
 

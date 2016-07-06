@@ -70,7 +70,14 @@ For more information, please see <a href="{{ url_for('tutorial') }}">Tutorial</a
       <tr>
         <td>allow neighboring defects</td>
         <td>
-          <input type="checkbox" name='dense_defect' value='10' class="input-mini" style="height: 14px; line-height: 14px;" required>
+          <input type="checkbox" name='dense_defect' value='1' class="input-mini" style="height: 14px; line-height: 14px;">
+          <!--<span class='badge' data-toggle="popover" data-placement="right" data-content="Cut-off distance for the ANM around end structure 1">?</a></span>-->
+        </td>
+      </tr>
+      <tr>
+        <td>Cap hydrogen</td>
+        <td>
+          <input type="checkbox" name='cap_hydrogen' value='1' class="input-mini" style="height: 14px; line-height: 14px;" checked required>
           <!--<span class='badge' data-toggle="popover" data-placement="right" data-content="Cut-off distance for the ANM around end structure 1">?</a></span>-->
         </td>
       </tr>

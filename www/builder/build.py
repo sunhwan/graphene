@@ -174,13 +174,14 @@ def build_initial_pdb(g, pos, fname='junk.pdb'):
             fp.write(line % atomdata)
             count += 1
             theta += 60
+    fp.write("TER\n")
     fp.close()
     return atom_names
 
 def build_topology(h, atom_names, fname='graphene.rtf'):
     v = []
     atom_names = {}
-    count = 1
+    count = {'C': 1, 'H': 1}
     fp = open(fname, 'w')
     fp.write("""*  --------------------------------------------------------------------------  *
 *          GRAPHENE                                                            *
@@ -196,12 +197,21 @@ AUTO ANGLES DIHE
 
 RESI GP 0.0
 """)
-    for atom in h.nodes():
+    for atom, data in h.nodes(data=True):
         if h.degree(atom) < 1: continue
-        atom_names[atom] = "C%x" % count
-        count += 1
-        if count % 2 == 0:
+        if data.get('type') == 'H': continue
+        
+        if count['C'] % 2 == 1:
             fp.write("GROUP\n")
+
+        for n in h[atom]:
+            if h.node[n].get('type') != 'H': continue
+            atom_names[n] = "H%x" % count['H']
+            fp.write("ATOM %s HGR61 0.0\n" % atom_names[n])
+            count['H'] += 1
+
+        atom_names[atom] = "C%x" % count['C']
+        count['C'] += 1
         fp.write("ATOM %s CG2R61 0.0\n" % atom_names[atom])
         
     for atom_edge in h.edges():

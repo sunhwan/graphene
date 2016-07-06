@@ -59,7 +59,10 @@ def download(uuid, filename):
     jobdir = get_job_folder(uuid)
     if not os.path.exists(jobdir): abort(404)
 
-    filename = os.path.join(jobdir, 'graphene.pdb')
+    if not filename:
+        filename = os.path.join(jobdir, 'graphene.pdb')
+    else:
+        filename = os.path.join(jobdir, filename)
     if not os.path.exists(filename): abort(404)
     fp = open(filename)
     return send_file(fp, as_attachment=True, attachment_filename=os.path.basename(filename))
@@ -78,7 +81,8 @@ def build():
 
     nrings = int(request.form['nrings'])
     defect = float(request.form['defect']) / 100
-    dense_defect = bool(request.form['dense_defect'])
+    dense_defect = bool(request.form.getlist('dense_defect'))
+    cap_hydrogen = bool(request.form.getlist('cap_hydrogen'))
 
     g = nx.Graph()
     g.defect_level = defect
@@ -97,15 +101,28 @@ def build():
                 closed_node.append(n)
 
     h = atom_graph(g)
-    pos=nx.graphviz_layout(h, prog='neato')
+
+    # cap hydrogen
+    if cap_hydrogen:
+        atoms = h.nodes()
+        count = len(h.nodes())
+        for n in atoms:
+            if h.degree(n) != 3:
+                nn = 3 - h.degree(n)
+                for _ in range(nn):
+                    h.add_node(count, {'type': 'H'})
+                    h.add_edge(n, count)
+                    count += 1
+                
+    pos=nx.nx_pydot.graphviz_layout(h, prog='neato')
     pdbname = '%s/junk.pdb' % get_job_folder(jobid)
     rtfname = '%s/graphene.rtf' % get_job_folder(jobid)
     atom_names = build_initial_pdb(g, pos, pdbname)
     build_topology(h, atom_names, rtfname)
 
     from shutil import copy
-    copy('static/charmm/graphene.prm', get_job_folder(jobid))
-    copy('static/charmm/mini.inp', get_job_folder(jobid))
+    copy(os.path.join(conf.BASEDIR, 'builder/static/charmm/graphene.prm'), get_job_folder(jobid))
+    copy(os.path.join(conf.BASEDIR, 'builder/static/charmm/mini.inp'), get_job_folder(jobid))
 
     import subprocess as sp
     p = sp.Popen([conf.CHARMM_BINARY, '-i', 'mini.inp'], cwd=get_job_folder(jobid))
